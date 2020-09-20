@@ -1,0 +1,18 @@
+[package]
+name = "feeders"
+version = "0.1.0"
+authors = ["Matt Wright <mattwright3195@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+vd = { path = "../vd" }
+actix-web = "3.0.2"
+actix-cors = "0.3.0"
+async-graphql = "2.0.0-alpha.14"
+async-graphql-actix-web = "2.0.0-alpha.14"
+sqlx = { version = "0.4.0-beta.1", default-features = false, features = [ "runtime-tokio", "macros", "postgres", "uuid" ] }
+anyhow = "1.0.32"
+serde = { version = "1.0.116", features = ["derive"] }
+uuid = "0.8.1"
