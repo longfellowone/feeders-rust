@@ -5,3 +5,7 @@ authors = ["Matt Wright <mattwright3195@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+
+[build-dependencies]
+serde = { version = "1.0.116", features = ["derive"] }
+csv = "1.1.3"
