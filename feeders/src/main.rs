@@ -1,8 +1,8 @@
 use actix_cors::Cors;
-use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::{web, App, HttpResponse};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{Context, EmptySubscription, FieldResult, Object, ID};
-use async_graphql_actix_web::{GQLRequest, GQLResponse};
+use async_graphql_actix_web::{Request, Response};
 use sqlx::{FromRow, PgPool};
 use std::env;
 use std::thread::sleep;
@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 type Schema = async_graphql::Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
-async fn index(schema: web::Data<Schema>, req: GQLRequest) -> GQLResponse {
+async fn index(schema: web::Data<Schema>, req: Request) -> Response {
     schema.execute(req.into_inner()).await.into()
 }
 
@@ -79,11 +79,22 @@ async fn main() -> anyhow::Result<()> {
 
     let db_pool = PgPool::connect(&db_url).await?;
 
+    actix_web::rt::spawn(async {
+        let mut interval = actix_web::rt::time::interval(Duration::from_secs(1));
+        loop {
+            interval.tick().await;
+            println!("Synced");
+            break;
+        }
+    });
+
     let schema = async_graphql::Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .data(db_pool)
         .finish();
 
-    HttpServer::new(move || {
+    println!("Stating server...");
+
+    actix_web::HttpServer::new(move || {
         App::new()
             .data(schema.clone())
             .wrap(Cors::new().finish())
@@ -93,8 +104,6 @@ async fn main() -> anyhow::Result<()> {
     .bind("0.0.0.0:8080")? // Use 0.0.0.0 to access from network
     .run()
     .await?;
-
-    println!("Server started");
 
     Ok(())
 }

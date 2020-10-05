@@ -5,7 +5,11 @@ authors = ["Matt Wright <mattwright3195@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+serde = { version = "1.0.116", features = ["derive"] }
+serde_cbor = "0.11.1"
+lazy_static = "1.4.0"
 
 [build-dependencies]
 serde = { version = "1.0.116", features = ["derive"] }
 csv = "1.1.3"
+serde_cbor = "0.11.1"
