@@ -16,24 +16,21 @@ struct Table2Row {
     resistance_75: f64,
 }
 
-fn read_csv() -> Result<(), Box<dyn Error>> {
+fn parse_csv() -> Result<(), Box<dyn Error>> {
     let mut rdr = csv::Reader::from_path("test.csv")?;
     let data = rdr.deserialize().collect::<Result<Vec<Table2Row>, _>>()?;
 
     let out_dir = env::var_os("OUT_DIR").unwrap();
     let path = Path::new(&out_dir).join("data.cbor");
 
-    println!("{:?}", path);
-
     let file = File::create(path)?;
-
     serde_cbor::to_writer(file, &data)?;
 
     Ok(())
 }
 
 fn main() {
-    read_csv().unwrap();
+    parse_csv().unwrap();
 
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=test.csv");
