@@ -1,9 +1,8 @@
-// include_str!(concat!(env!("OUT_DIR"), "\\data.cbor"));
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Table2Row {
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct Table2Row {
     conductor_size: String,
     resistance_75: f64,
 }
@@ -13,8 +12,8 @@ lazy_static! {
         serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\data.cbor"))).unwrap();
 }
 
-pub fn return_ref() {
-    println!("{:?}", *EXAMPLE2)
+pub fn table2() -> &'static Vec<Table2Row> {
+    &*EXAMPLE2
 }
 
 #[cfg(test)]
@@ -22,7 +21,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn return_ref_works() {
-        assert_eq!(return_ref(), ());
+    fn table2_has_data() {
+        assert_eq!(
+            table2()[0],
+            Table2Row {
+                conductor_size: "600mcm".to_string(),
+                resistance_75: 0.0214
+            }
+        );
     }
 }
