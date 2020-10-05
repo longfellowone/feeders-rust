@@ -23,11 +23,11 @@ mod tests {
     #[test]
     fn table2_has_data() {
         assert_eq!(
-            table2()[0],
-            Table2Row {
+            table2().into_iter().next(),
+            Some(&Table2Row {
                 conductor_size: "600mcm".to_string(),
                 resistance_75: 0.0214
-            }
+            })
         );
     }
 }
