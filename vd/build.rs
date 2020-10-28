@@ -5,6 +5,7 @@
 // cargo build -vv
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::env;
 use std::error::Error;
 use std::fs::File;
@@ -18,7 +19,14 @@ struct Table2Row {
 
 fn parse_csv() -> Result<(), Box<dyn Error>> {
     let mut rdr = csv::Reader::from_path("test.csv")?;
-    let data = rdr.deserialize().collect::<Result<Vec<Table2Row>, _>>()?;
+    // let data = rdr.deserialize().collect::<Result<Vec<Table2Row>, _>>()?;
+
+    let mut data = BTreeMap::new();
+
+    for result in rdr.deserialize() {
+        let row: Table2Row = result?;
+        data.insert(row.conductor_size.to_string(), row);
+    }
 
     let out_dir = env::var_os("OUT_DIR").unwrap();
     let path = Path::new(&out_dir).join("data.cbor");
