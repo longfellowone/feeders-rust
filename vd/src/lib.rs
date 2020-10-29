@@ -17,20 +17,20 @@ pub struct T2Row {
 //     destination: String,
 // }
 
+#[derive(Debug, PartialEq)]
+pub enum Metal {
+    Copper(CopperSize),
+    Aluminum(AluminumSize),
+}
+
 // #[derive(Debug, PartialEq)]
-// pub enum Conductor {
-//     Copper(CopperSizes),
-//     Aluminum(AluminumSizes),
+// pub struct Conductor {
+//     copper: Copper,
+//     aluminum: Aluminum,
 // }
 
 #[derive(Debug, PartialEq)]
-pub struct Conductor {
-    copper: Copper,
-    aluminum: Aluminum,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Copper {
+pub enum CopperSize {
     Cu12,
     Cu10,
     Cu8,
@@ -42,7 +42,7 @@ pub enum Copper {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Aluminum {
+pub enum AluminumSize {
     Al250,
 }
 
@@ -88,16 +88,18 @@ pub fn t2() -> &'static BTreeMap<String, T2Row> {
     &*T2
 }
 
-pub fn min_conductor_size(length: i32, voltage: i32, current: i32) -> Conductor {
+pub fn min_conductor_size(length: i32, voltage: i32, current: i32) -> Metal {
     // calc_voltage_drop(length, voltage, current);
-    Conductor {
-        copper: Copper::Cu0,
-        aluminum: Aluminum::Al250,
-    }
+    // Conductor {
+    //     copper: Copper::Cu0,
+    //     aluminum: Aluminum::Al250,
+    // }
+    Metal::Copper(CopperSize::Cu0)
 }
 
 pub fn calc_voltage_drop(length: i32, voltage: i32, current: i32) -> f64 {
     // https://www.southwire.com/calculator-vdrop
+
     // calctype: "minConductorSize"
     // conductorSize: "Conductor Size"
     // current: "12"
@@ -156,11 +158,10 @@ mod tests {
     fn test_min_conductor_size() {
         assert_eq!(
             min_conductor_size(155, 208, 160),
-            // Conductor::Copper(CopperSizes::Cu0)
-            Conductor {
-                copper: Copper::Cu0,
-                aluminum: Aluminum::Al250,
-            }
+            Metal::Copper(CopperSizes::Cu0) // Conductor {
+                                            //     copper: Copper::Cu0,
+                                            //     aluminum: Aluminum::Al250,
+                                            // }
         )
     }
 }
