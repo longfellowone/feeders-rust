@@ -12,7 +12,7 @@ use std::fs::File;
 use std::path::Path;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Table2Row {
+struct T2Row {
     conductor_size: String,
     resistance_75: f64,
 }
@@ -24,7 +24,7 @@ fn parse_csv() -> Result<(), Box<dyn Error>> {
     let mut data = BTreeMap::new();
 
     for result in rdr.deserialize() {
-        let row: Table2Row = result?;
+        let row: T2Row = result?;
         data.insert(row.conductor_size.to_string(), row);
     }
 

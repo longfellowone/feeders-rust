@@ -46,7 +46,7 @@ impl QueryRoot {
     async fn todos(&self, ctx: &Context<'_>) -> FieldResult<Vec<Todo>> {
         let db_pool = ctx.data::<PgPool>()?;
 
-        println!("{:?}", vd::table2().into_iter().next().unwrap());
+        println!("{:?}", vd::t2().into_iter().next().unwrap());
 
         let todos = sqlx::query_as::<_, Todo>(
             r#"
