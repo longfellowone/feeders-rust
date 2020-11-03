@@ -143,18 +143,18 @@ pub fn calc_voltage_drop(length_ft: i32, voltage: i32, current: i32) -> f64 {
     // Single phase use 2 instead of sqrt3
 
     let power_factor: f64 = 0.9; // PF of 0.85 most common
-    let theta = f64::acos(power_factor);
+    let theta = f64::acos(power_factor); // Power factor angle
     let multiplier = f64::sqrt(3.0); // (3.0_f64).sqrt() for line-to-line voltage drop, Multiply for 2 instead for line-to-neutral
     let resistance = 0.0847; // R
-    let reactance = 0.041; // Xl
+    let reactance = 0.041; // X
     let impedance = resistance * theta.cos() + reactance * theta.sin(); // Effective Z, Addition based on assumed lagging PF
-    let vd = current as f64 * impedance / 1000.0 * length_ft as f64;
+    let vd = current as f64 * impedance * length_ft as f64 / 1000.0;
 
     multiplier * vd
 }
 
 pub fn calc_change_in_resistance(from: i32, to: i32, resistance: f64) -> f64 {
-    let a = 0.00323; // Copper
+    let a = 0.00323; // Temperature coefficient of copper @ 75 degrees. Aluminum 0.00330
     resistance * (1.0 + a * (to as f64 - from as f64))
 }
 

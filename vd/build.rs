@@ -22,7 +22,7 @@ struct T2Conductor {
 // https://docs.rs/csv/1.1.3/csv/
 fn parse_csv() -> Result<()> {
     let mut rdr = csv::Reader::from_path("test.csv")?;
-    // let data = rdr.deserialize().collect::<Result<Vec<Table2Row>, _>>()?;
+    // let data = rdr.deserialize().collect::<Result<Vec<Table2Row>, _>>()
 
     let mut data = BTreeMap::new();
 
