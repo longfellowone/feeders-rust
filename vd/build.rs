@@ -23,10 +23,24 @@ fn parse_csv() -> Result<(), Box<dyn Error>> {
 
     let mut data = BTreeMap::new();
 
+    let mut conductor_sizes = Vec::new();
+    let mut conductor_resistances = Vec::new();
+
     for result in rdr.deserialize() {
         let conductor: T2Conductor = result?;
+
+        conductor_sizes.push(conductor.size.to_string());
+        conductor_resistances.push(conductor.resistance_75);
+
         data.insert(conductor.size.to_string(), conductor);
     }
+
+    let test: BTreeMap<_, _> = conductor_sizes
+        .into_iter()
+        .zip(conductor_resistances)
+        .collect();
+
+    println!("{:#?}", test);
 
     let out_dir = env::var_os("OUT_DIR").unwrap();
     let path = Path::new(&out_dir).join("data.cbor");

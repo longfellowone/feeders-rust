@@ -88,9 +88,9 @@ lazy_static! {
         serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\data.cbor"))).unwrap();
 }
 
-pub fn t2() -> &'static BTreeMap<String, T2Conductor> {
-    &*T2
-}
+// pub fn t2() -> &'static BTreeMap<String, T2Conductor> {
+//     &*T2
+// }
 
 pub fn min_conductor_size(length: i32, voltage: i32, current: i32) -> Metal {
     // calc_voltage_drop(length, voltage, current);
@@ -118,15 +118,15 @@ pub fn calc_voltage_drop(length: i32, voltage: i32, current: i32) -> f64 {
 
     // Single phase use 2 instead of sqrt3
 
-    let multiplier = f64::sqrt(3.0); // (3.0_f64).sqrt()
     let pf: f64 = 0.9;
+    let theta = f64::acos(pf);
+    let multiplier = f64::sqrt(3.0); // (3.0_f64).sqrt()
     let resistance = 0.0847;
     let reactance = 0.041;
+    let impedance = resistance * theta.cos() / 1000.0 + reactance * theta.sin() / 1000.0;
+    let vd = current as f64 * impedance * length as f64;
 
-    multiplier
-        * current as f64
-        * (resistance * pf / 1000.0 + reactance * pf.acos().sin() / 1000.0)
-        * length as f64
+    multiplier * vd
 }
 
 pub fn calc_resistance_required() -> f64 {
@@ -140,7 +140,7 @@ mod tests {
     #[test]
     fn t2_has_data() {
         assert_eq!(
-            t2().get("600mcm"),
+            T2.get("600mcm"),
             Some(&T2Conductor {
                 size: "600mcm".to_string(),
                 resistance_75: 0.0214
