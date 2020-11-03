@@ -3,19 +3,29 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+// Naming conventions
+// https://doc.rust-lang.org/1.0.0/style/style/naming/README.html
+
+// ENUMS
+// https://doc.rust-lang.org/reference/items/enumerations.html
+
 // Use match on metal/phase/conduit/unit
 // vd::maxdistance::new() ::minconductor
 // calc::from(panel)
+// vd::single_phase ::three_phase -> crate::vd
+// vd::dc
+
+// References
+// http://profwagner.com/4520/4520-PPT10.pdf
+// https://pdhonline.com/courses/e426/e426content.pdf
+// https://github.com/MasonMcGarrity/Voltage_Drop_Calculator/blob/master/main.py#L282
+// https://github.com/Zclarkwilliams/Voltage-Drop-Excel-Calculator/blob/master/Code/Main_Rev2.vba
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct T2Conductor {
     size: String,
     resistance_75: f64,
 }
-
-// ENUMS
-// https://doc.rust-lang.org/reference/items/enumerations.html
-
 // pub struct Location {
 //     source: String,
 //     destination: String,
@@ -50,13 +60,22 @@ pub enum AluminumSize {
     Al250,
 }
 
+// Note: Bond size must increase when conductor size is increased due to VD
+
+pub struct Motor {
+    voltage: i32,
+    hp: i32,
+}
+
 pub struct Panel {
     size: i32,
     voltage: i32,
     parallel_sets: i32,
     number_conductors: i32,
-    max_voltage_drop: i32,
-    distance: i32,
+    termination_temperature: i32,
+    overcurrent_size: i32,
+    // max_voltage_drop: i32,
+    // distance: i32,
     // location: Location,
 }
 
@@ -65,11 +84,13 @@ pub struct Transformer {
     primary_voltage: i32,
     primary_parallel_sets: i32,
     primary_number_conductors: i32,
+    primary_termination_temperature: i32,
+    primary_overcurrent_size: i32,
     secondary_voltage: i32,
     secondary_parallel_sets: i32,
     secondary_number_conductors: i32,
-    max_voltage_drop: i32,
-    distance: i32,
+    // max_voltage_drop: i32,
+    // distance: i32,
     // location: Location,
 }
 
@@ -88,10 +109,11 @@ lazy_static! {
         serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\data.cbor"))).unwrap();
 }
 
-// pub fn t2() -> &'static BTreeMap<String, T2Conductor> {
-//     &*T2
-// }
-
+// Maybe use approximate than double check?
+// https://pdhonline.com/courses/e426/e426content.pdf see page49/57
+// Or just use vd function recursively until match
+// https://stackoverflow.com/questions/49599833/how-to-find-next-smaller-key-in-btreemap-btreeset
+// https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
 pub fn min_conductor_size(length_ft: i32, voltage: i32, current: i32) -> Metal {
     // calc_voltage_drop(length, voltage, current);
     // Conductor {
@@ -101,6 +123,8 @@ pub fn min_conductor_size(length_ft: i32, voltage: i32, current: i32) -> Metal {
     Metal::Copper(CopperSize::Cu0)
 }
 
+// Estimated, does not account for error
+// https://pdhonline.com/courses/e426/e426content.pdf see page 36/57
 pub fn calc_voltage_drop(length_ft: i32, voltage: i32, current: i32) -> f64 {
     // https://www.southwire.com/calculator-vdrop
 

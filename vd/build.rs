@@ -11,13 +11,16 @@ use std::error::Error;
 use std::fs::File;
 use std::path::Path;
 
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
+
 #[derive(Serialize, Deserialize, Debug)]
 struct T2Conductor {
     size: String,
     resistance_75: f64,
 }
 
-fn parse_csv() -> Result<(), Box<dyn Error>> {
+// https://docs.rs/csv/1.1.3/csv/
+fn parse_csv() -> Result<()> {
     let mut rdr = csv::Reader::from_path("test.csv")?;
     // let data = rdr.deserialize().collect::<Result<Vec<Table2Row>, _>>()?;
 
@@ -47,6 +50,30 @@ fn parse_csv() -> Result<(), Box<dyn Error>> {
 
     let file = File::create(path)?;
     serde_cbor::to_writer(file, &data)?;
+
+    // AWG sizes (keys) reactance (values) for pvc, Al conduit
+    // awg_reactance_pvc_al
+    //
+    // AWG sizes (keys) reactance (values) for steel conduit
+    // awg_reactance_steel
+    //
+    // AWG sizes (keys) and resistance (values) for CU conductors & pvc conduit
+    // cu_resistance_pvc
+    //
+    // AWG sizes (keys) and resistance (values) for CU conductors & Al conduit
+    // cu_resistance_al
+    //
+    // AWG sizes (keys) and resistance (values) for CU conductors & steel conduit
+    // cu_resistance_steel
+    //
+    // AWG sizes (keys) and resistance (values) for Al conductors & pvc conduit
+    // al_resistance_pvc
+    //
+    // AWG sizes (keys) and resistance (values) for Al conductors & Al conduit
+    // al_resistance_al
+    //
+    // AWG sizes (keys) and resistance (values) for Al conductors & steel conduit
+    // al_resistance_steel
 
     Ok(())
 }
