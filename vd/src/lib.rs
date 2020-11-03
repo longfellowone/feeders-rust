@@ -3,9 +3,13 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+// Use match on metal/phase/conduit/unit
+// vd::maxdistance::new() ::minconductor
+// calc::from(panel)
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct T2Row {
-    conductor_size: String,
+pub struct T2Conductor {
+    size: String,
     resistance_75: f64,
 }
 
@@ -80,11 +84,11 @@ pub struct Pull {
 // pub type FeederSchedule = Vec<Pull>;
 
 lazy_static! {
-    static ref T2: BTreeMap<String, T2Row> =
+    static ref T2: BTreeMap<String, T2Conductor> =
         serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\data.cbor"))).unwrap();
 }
 
-pub fn t2() -> &'static BTreeMap<String, T2Row> {
+pub fn t2() -> &'static BTreeMap<String, T2Conductor> {
     &*T2
 }
 
@@ -137,8 +141,8 @@ mod tests {
     fn t2_has_data() {
         assert_eq!(
             t2().get("600mcm"),
-            Some(&T2Row {
-                conductor_size: "600mcm".to_string(),
+            Some(&T2Conductor {
+                size: "600mcm".to_string(),
                 resistance_75: 0.0214
             })
         );
@@ -158,10 +162,11 @@ mod tests {
     fn test_min_conductor_size() {
         assert_eq!(
             min_conductor_size(155, 208, 160),
-            Metal::Copper(CopperSizes::Cu0) // Conductor {
-                                            //     copper: Copper::Cu0,
-                                            //     aluminum: Aluminum::Al250,
-                                            // }
+            // Conductor {
+            //     copper: Copper::Cu0,
+            //     aluminum: Aluminum::Al250,
+            // }
+            Metal::Copper(CopperSize::Cu0)
         )
     }
 }

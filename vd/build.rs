@@ -12,8 +12,8 @@ use std::fs::File;
 use std::path::Path;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct T2Row {
-    conductor_size: String,
+struct T2Conductor {
+    size: String,
     resistance_75: f64,
 }
 
@@ -24,8 +24,8 @@ fn parse_csv() -> Result<(), Box<dyn Error>> {
     let mut data = BTreeMap::new();
 
     for result in rdr.deserialize() {
-        let row: T2Row = result?;
-        data.insert(row.conductor_size.to_string(), row);
+        let conductor: T2Conductor = result?;
+        data.insert(conductor.size.to_string(), conductor);
     }
 
     let out_dir = env::var_os("OUT_DIR").unwrap();
