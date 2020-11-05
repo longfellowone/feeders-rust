@@ -3,12 +3,6 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-// Naming conventions
-// https://doc.rust-lang.org/1.0.0/style/style/naming/README.html
-
-// ENUMS
-// https://doc.rust-lang.org/reference/items/enumerations.html
-
 // Use match on metal/phase/conduit/unit
 // vd::maxdistance::new() ::minconductor
 // calc::from(panel)
@@ -26,22 +20,12 @@ pub struct T2Conductor {
     size: String,
     resistance_75: f64,
 }
-// pub struct Location {
-//     source: String,
-//     destination: String,
-// }
 
 #[derive(Debug, PartialEq)]
 pub enum Metal {
     Copper(CopperSize),
     Aluminum(AluminumSize),
 }
-
-// #[derive(Debug, PartialEq)]
-// pub struct Conductor {
-//     copper: Copper,
-//     aluminum: Aluminum,
-// }
 
 #[derive(Debug, PartialEq)]
 pub enum CopperSize {
@@ -60,50 +44,6 @@ pub enum AluminumSize {
     Al250,
 }
 
-// Note: Bond size must increase when conductor size is increased due to VD
-
-pub struct Motor {
-    voltage: i32,
-    hp: i32,
-}
-
-pub struct Panel {
-    size: i32,
-    voltage: i32,
-    parallel_sets: i32,
-    number_conductors: i32,
-    termination_temperature: i32,
-    overcurrent_size: i32,
-    // max_voltage_drop: i32,
-    // distance: i32,
-    // location: Location,
-}
-
-pub struct Transformer {
-    kva: i32,
-    primary_voltage: i32,
-    primary_parallel_sets: i32,
-    primary_number_conductors: i32,
-    primary_termination_temperature: i32,
-    primary_overcurrent_size: i32,
-    secondary_voltage: i32,
-    secondary_parallel_sets: i32,
-    secondary_number_conductors: i32,
-    // max_voltage_drop: i32,
-    // distance: i32,
-    // location: Location,
-}
-
-pub struct Pull {
-    conductor_size: String,
-    voltage_drop: i32,
-    termination_temperature: i32,
-    // location: Location,
-    // ground_size: String,
-}
-
-// pub type FeederSchedule = Vec<Pull>;
-
 lazy_static! {
     static ref T2: BTreeMap<String, T2Conductor> =
         serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\data.cbor"))).unwrap();
@@ -115,19 +55,12 @@ lazy_static! {
 // https://stackoverflow.com/questions/49599833/how-to-find-next-smaller-key-in-btreemap-btreeset
 // https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
 pub fn min_conductor_size(length_ft: i32, voltage: i32, current: i32) -> Metal {
-    // calc_voltage_drop(length, voltage, current);
-    // Conductor {
-    //     copper: Copper::Cu0,
-    //     aluminum: Aluminum::Al250,
-    // }
     Metal::Copper(CopperSize::Cu0)
 }
 
 // Estimated, does not account for error
 // https://pdhonline.com/courses/e426/e426content.pdf see page 36/57
 pub fn calc_voltage_drop(length_ft: i32, voltage: i32, current: i32) -> f64 {
-    // https://www.southwire.com/calculator-vdrop
-
     // calctype: "minConductorSize"
     // conductorSize: "Conductor Size"
     // current: "12"
@@ -139,8 +72,6 @@ pub fn calc_voltage_drop(length_ft: i32, voltage: i32, current: i32) -> f64 {
     // sets: "1"
     // units: "imperial"
     // voltage: "120"
-
-    // Single phase use 2 instead of sqrt3
 
     let power_factor: f64 = 0.9; // PF of 0.85 most common
     let theta = f64::acos(power_factor); // Power factor angle
@@ -195,10 +126,6 @@ mod tests {
     fn test_min_conductor_size() {
         assert_eq!(
             min_conductor_size(155, 208, 160),
-            // Conductor {
-            //     copper: Copper::Cu0,
-            //     aluminum: Aluminum::Al250,
-            // }
             Metal::Copper(CopperSize::Cu0)
         )
     }
