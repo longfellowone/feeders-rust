@@ -17,35 +17,82 @@ use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct T2Conductor {
-    size: String,
-    resistance_75: f64,
+    pub size: String,
+    pub resistance_75: f64,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Metal {
-    Copper(CopperSize),
-    Aluminum(AluminumSize),
+    Copper,
+    Aluminum,
+}
+
+#[derive(Debug)]
+pub enum ConduitType {
+    Steel,
+    PVC,
+    Aluminum,
+}
+
+#[derive(Debug)]
+pub enum Unit {
+    Imperial,
+    Metric,
+}
+
+#[derive(Debug)]
+pub enum Phase {
+    Single,
+    Three,
+}
+
+#[derive(Debug)]
+pub enum VoltageType {
+    AC,
+    DC,
 }
 
 #[derive(Debug, PartialEq)]
-pub enum CopperSize {
-    Cu12,
-    Cu10,
-    Cu8,
-    Cu6,
-    Cu0,
-    Cu00,
-    Cu000,
-    Cu250,
+pub struct Conductor {
+    size: String,
+    metal: Metal,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum AluminumSize {
-    Al250,
+// Have separate for DC?
+pub struct MinConductorSize {
+    pub voltage: i32,
+    pub current: i32,
+    pub length: i32,
+    pub max_vd_percentage: f64,
+    pub resistance: i32,
+    pub power_factor: f64,
+    pub voltage_type: VoltageType,
+    pub phase: Phase,
+    pub conduit_type: ConduitType,
+    pub metal: Metal,
+    pub unit: Unit,
+}
+
+impl MinConductorSize {
+    pub fn new() -> Self {
+        MinConductorSize {
+            voltage: 0,
+            current: 0,
+            length: 0,
+            phase: Phase::Single,
+            max_vd_percentage: 0.0,
+            conduit_type: ConduitType::Steel,
+            metal: Metal::Copper,
+            unit: Unit::Imperial,
+            power_factor: 85.0,
+            resistance: 75,
+            voltage_type: VoltageType::AC,
+        }
+    }
 }
 
 lazy_static! {
-    static ref T2: BTreeMap<String, T2Conductor> =
+    pub static ref T2: BTreeMap<String, T2Conductor> =
         serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\data.cbor"))).unwrap();
 }
 
@@ -54,39 +101,34 @@ lazy_static! {
 // Or just use vd function recursively until match
 // https://stackoverflow.com/questions/49599833/how-to-find-next-smaller-key-in-btreemap-btreeset
 // https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
-pub fn min_conductor_size(length_ft: i32, voltage: i32, current: i32) -> Metal {
-    Metal::Copper(CopperSize::Cu0)
+pub fn min_conductor_size(length_ft: i32, voltage: i32, current: i32) -> Conductor {
+    Conductor {
+        size: "500mcm".to_string(),
+        metal: Metal::Copper,
+    }
 }
 
 // Estimated, does not account for error
 // https://pdhonline.com/courses/e426/e426content.pdf see page 36/57
 pub fn calc_voltage_drop(length_ft: i32, voltage: i32, current: i32) -> f64 {
-    // calctype: "minConductorSize"
-    // conductorSize: "Conductor Size"
-    // current: "12"
-    // installation: "directBuried"
-    // length: "100"
-    // maxVoltage: "3"
-    // metal: "copper"
-    // phase: "one"
-    // sets: "1"
-    // units: "imperial"
-    // voltage: "120"
+    // DC Voltage drop, no PF or reactance
 
     let power_factor: f64 = 0.9; // PF of 0.85 most common
     let theta = f64::acos(power_factor); // Power factor angle
     let multiplier = f64::sqrt(3.0); // (3.0_f64).sqrt() for line-to-line voltage drop, Multiply for 2 instead for line-to-neutral
     let resistance = 0.0847; // R
     let reactance = 0.041; // X
-    let impedance = resistance * theta.cos() + reactance * theta.sin(); // Effective Z, Addition based on assumed lagging PF
+    let impedance = resistance * power_factor + reactance * theta.sin(); // Effective Z, Addition based on assumed lagging PF
     let vd = current as f64 * impedance * length_ft as f64 / 1000.0;
 
     multiplier * vd
 }
 
-pub fn calc_change_in_resistance(from: i32, to: i32, resistance: f64) -> f64 {
-    let a = 0.00323; // Temperature coefficient of copper @ 75 degrees. Aluminum 0.00330
-    resistance * (1.0 + a * (to as f64 - from as f64))
+pub fn calc_change_in_resistance(to: i32, resistance: f64) -> f64 {
+    const FROM: f64 = 75.0; // Table 9 resistance values based of 75 degrees
+    const A: f64 = 0.00323; // Temperature coefficient of copper @ 75 degrees. Aluminum 0.00330
+
+    resistance * (1.0 + A * (to as f64 - FROM as f64))
 }
 
 pub fn calc_resistance_required() -> f64 {
@@ -120,13 +162,16 @@ mod tests {
 
     #[test]
     fn test_calc_change_in_resistance() {
-        assert_eq!(calc_change_in_resistance(75, 20, 1.2), 0.98682)
+        assert_eq!(calc_change_in_resistance(20, 1.2), 0.98682)
     }
     #[test]
     fn test_min_conductor_size() {
         assert_eq!(
             min_conductor_size(155, 208, 160),
-            Metal::Copper(CopperSize::Cu0)
+            Conductor {
+                size: "500mcm".to_string(),
+                metal: Metal::Copper
+            }
         )
     }
 }

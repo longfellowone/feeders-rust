@@ -46,7 +46,8 @@ impl QueryRoot {
     async fn todos(&self, ctx: &Context<'_>) -> FieldResult<Vec<Todo>> {
         let db_pool = ctx.data::<PgPool>()?;
 
-        println!("{:?}", vd::t2().into_iter().next().unwrap());
+        let conductor = vd::T2.get("600mcm").unwrap();
+        println!("{:#?}", conductor);
 
         let todos = sqlx::query_as::<_, Todo>(
             r#"
@@ -97,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
     actix_web::HttpServer::new(move || {
         App::new()
             .data(schema.clone())
-            .wrap(Cors::new().finish())
+            .wrap(Cors::permissive())
             .route("/", web::post().to(index))
             .route("/", web::get().to(index_playground))
     })
