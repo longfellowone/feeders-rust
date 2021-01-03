@@ -2,6 +2,7 @@
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::convert::TryFrom;
 
 // Use match on metal/phase/conduit/unit
 
@@ -57,42 +58,45 @@ pub enum Phase {
     Three,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum VoltageType {
-    AC,
-    DC,
+impl TryFrom<i8> for Phase {
+    type Error = &'static str;
+
+    fn try_from(item: i8) -> Result<Self, Self::Error> {
+        match item {
+            1 => Ok(Self::Single),
+            3 => Ok(Self::Three),
+            _ => Err("Phase must be either 1 or 3"),
+        }
+    }
 }
 
-// Have separate for DC?
 #[derive(Debug, PartialEq)]
-pub struct MinConductorSize {
+pub struct MinConductorSizeAC {
     pub voltage: i32,
     pub current: i32,
     pub length: i32,
     pub max_vd_percentage: f64,
     pub temperature: i32,
     pub power_factor: f64,
-    pub voltage_type: VoltageType,
     pub phase: Phase,
     pub conduit_type: ConduitType,
     pub metal: Metal,
     pub unit: Unit,
 }
 
-impl MinConductorSize {
+impl MinConductorSizeAC {
     pub fn new() -> Self {
-        MinConductorSize {
+        MinConductorSizeAC {
             voltage: 0,
             current: 0,
             length: 0,
-            phase: Phase::Single,
+            phase: Phase::try_from(1).unwrap(),
             max_vd_percentage: 0.0,
             conduit_type: ConduitType::Steel,
             metal: Metal::Copper,
             unit: Unit::Imperial,
             power_factor: 85.0,
             temperature: 75,
-            voltage_type: VoltageType::AC,
         }
     }
 
@@ -165,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_min_conductor_size_calculate() {
-        let min_conductor_size = MinConductorSize::new();
+        let min_conductor_size = MinConductorSizeAC::new();
         assert_eq!(
             min_conductor_size.calculate(),
             Conductor {
