@@ -14,10 +14,16 @@ use std::collections::BTreeMap;
 // https://github.com/MasonMcGarrity/Voltage_Drop_Calculator/blob/master/main.py#L282
 // https://github.com/Zclarkwilliams/Voltage-Drop-Excel-Calculator/blob/master/Code/Main_Rev2.vba
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct T2Conductor {
-    pub size: String,
-    pub resistance_75: f64,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Table9 {
+    reactance_pvc_al: BTreeMap<String, f64>,
+    reactance_steel: BTreeMap<String, f64>,
+    cu_resistance_pvc: BTreeMap<String, f64>,
+    cu_resistance_al: BTreeMap<String, f64>,
+    cu_resistance_steel: BTreeMap<String, f64>,
+    al_resistance_pvc: BTreeMap<String, f64>,
+    al_resistance_al: BTreeMap<String, f64>,
+    al_resistance_steel: BTreeMap<String, f64>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -101,8 +107,8 @@ impl MinConductorSize {
 pub struct MaxDistance {}
 
 lazy_static! {
-    pub static ref T2: BTreeMap<String, T2Conductor> =
-        serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\data.cbor"))).unwrap();
+    pub static ref T9: Table9 =
+        serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\t9.cbor"))).unwrap();
 }
 
 // Maybe use approximate than double check?
@@ -154,13 +160,7 @@ mod tests {
 
     #[test]
     fn t2_has_data() {
-        assert_eq!(
-            T2.get("600mcm"),
-            Some(&T2Conductor {
-                size: "600mcm".to_string(),
-                resistance_75: 0.0214
-            })
-        );
+        assert_eq!(T9.cu_resistance_steel.get("600"), Some(&0.025));
     }
 
     #[test]
