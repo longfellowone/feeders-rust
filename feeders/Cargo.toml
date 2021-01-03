@@ -8,11 +8,11 @@ edition = "2018"
 
 [dependencies]
 vd = { path = "../vd" }
-actix-web = "3.2.0"
-actix-cors = "0.5.1"
-async-graphql = "2.1.0"
-async-graphql-actix-web = "2.1.0"
-sqlx = { version = "0.4.0-beta.1", default-features = false, features = [ "runtime-tokio", "macros", "postgres", "uuid" ] }
-anyhow = "1.0.34"
-serde = { version = "1.0.117", features = ["derive"] }
+actix-web = "3.3.2"
+actix-cors = "0.5.3"
+async-graphql = "2.4.3"
+async-graphql-actix-web = "2.4.3"
+sqlx = { version = "0.4.2", default-features = false, features = [ "runtime-actix-rustls", "macros", "postgres", "uuid" ] }
+anyhow = "1.0.36"
+serde = { version = "1.0.118", features = ["derive"] }
 uuid = "0.8.1"

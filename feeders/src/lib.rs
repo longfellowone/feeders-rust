@@ -1,11 +1,18 @@
 #![allow(dead_code, unused_variables)]
 // Note: Bond size must increase when conductor size is increased due to VD
 
+// Newtype
+// https://www.worthe-it.co.za/blog/2020-10-31-newtype-pattern-in-rust.html
+
 // Naming conventions
 // https://doc.rust-lang.org/1.0.0/style/style/naming/README.html
 
 // ENUMS
 // https://doc.rust-lang.org/reference/items/enumerations.html
+
+// vd::MaxDistance::from(panel)
+
+// Use try_into()
 
 pub type FeederSchedule = Vec<Pull>;
 

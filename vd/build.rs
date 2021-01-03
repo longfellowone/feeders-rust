@@ -1,3 +1,4 @@
+#![feature(map_into_keys_values)]
 // https://github.com/Trangar/periodic_table/blob/master/build.rs
 // https://www.reddit.com/r/rust/comments/f47h5o/include_json_files_along_with_my_library/fhosgxh/?utm_source=share&utm_medium=web2x
 // https://docs.rs/serde_cbor/0.11.1/serde_cbor/

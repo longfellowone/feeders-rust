@@ -4,8 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 // Use match on metal/phase/conduit/unit
-// vd::maxdistance::new() ::minconductor
-// calc::from(panel)
+
 // vd::single_phase ::three_phase -> crate::vd
 // vd::dc
 
@@ -22,49 +21,50 @@ pub struct T2Conductor {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct Conductor {
+    size: String,
+    metal: Metal,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Metal {
     Copper,
     Aluminum,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ConduitType {
     Steel,
     PVC,
     Aluminum,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Unit {
     Imperial,
     Metric,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Phase {
     Single,
     Three,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum VoltageType {
     AC,
     DC,
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Conductor {
-    size: String,
-    metal: Metal,
-}
-
 // Have separate for DC?
+#[derive(Debug, PartialEq)]
 pub struct MinConductorSize {
     pub voltage: i32,
     pub current: i32,
     pub length: i32,
     pub max_vd_percentage: f64,
-    pub resistance: i32,
+    pub temperature: i32,
     pub power_factor: f64,
     pub voltage_type: VoltageType,
     pub phase: Phase,
@@ -85,11 +85,20 @@ impl MinConductorSize {
             metal: Metal::Copper,
             unit: Unit::Imperial,
             power_factor: 85.0,
-            resistance: 75,
+            temperature: 75,
             voltage_type: VoltageType::AC,
         }
     }
+
+    pub fn calculate(self: Self) -> Conductor {
+        Conductor {
+            size: "250".to_string(),
+            metal: Metal::Copper,
+        }
+    }
 }
+
+pub struct MaxDistance {}
 
 lazy_static! {
     pub static ref T2: BTreeMap<String, T2Conductor> =
@@ -110,29 +119,33 @@ pub fn min_conductor_size(length_ft: i32, voltage: i32, current: i32) -> Conduct
 
 // Estimated, does not account for error
 // https://pdhonline.com/courses/e426/e426content.pdf see page 36/57
-pub fn calc_voltage_drop(length_ft: i32, voltage: i32, current: i32) -> f64 {
-    // DC Voltage drop, no PF or reactance
-
+pub fn voltage_drop_ac(length_ft: i32, voltage: i32, current: i32) -> f64 {
     let power_factor: f64 = 0.9; // PF of 0.85 most common
     let theta = f64::acos(power_factor); // Power factor angle
     let multiplier = f64::sqrt(3.0); // (3.0_f64).sqrt() for line-to-line voltage drop, Multiply for 2 instead for line-to-neutral
     let resistance = 0.0847; // R
     let reactance = 0.041; // X
     let impedance = resistance * power_factor + reactance * theta.sin(); // Effective Z, Addition based on assumed lagging PF
-    let vd = current as f64 * impedance * length_ft as f64 / 1000.0;
 
-    multiplier * vd
+    multiplier * current as f64 * impedance * length_ft as f64 / 1000.0
 }
 
-pub fn calc_change_in_resistance(to: i32, resistance: f64) -> f64 {
-    const FROM: f64 = 75.0; // Table 9 resistance values based of 75 degrees
-    const A: f64 = 0.00323; // Temperature coefficient of copper @ 75 degrees. Aluminum 0.00330
+pub fn voltage_drop_dc(length_ft: i32, voltage: i32, current: i32) -> f64 {
+    let resistance = 0.0847; // R
+    let impedance = resistance;
 
-    resistance * (1.0 + A * (to as f64 - FROM as f64))
+    current as f64 * impedance * length_ft as f64 / 1000.0
 }
 
 pub fn calc_resistance_required() -> f64 {
     0.0
+}
+
+fn modify_resistance_temperature(resistance: f64, to_temperature: i32) -> f64 {
+    const FROM_TEMPERATURE: f64 = 75.0; // Table 9 resistance values based of 75 degrees
+    const A: f64 = 0.00323; // Temperature coefficient of copper @ 75 degrees. Aluminum 0.00330
+
+    resistance * (1.0 + A * (to_temperature as f64 - FROM_TEMPERATURE))
 }
 
 #[cfg(test)]
@@ -151,9 +164,24 @@ mod tests {
     }
 
     #[test]
-    fn test_calc_voltage_drop() {
-        assert_eq!(calc_voltage_drop(155, 208, 160), 4.042116145290523)
+    fn test_min_conductor_size_calculate() {
+        let min_conductor_size = MinConductorSize::new();
+        assert_eq!(
+            min_conductor_size.calculate(),
+            Conductor {
+                size: "250".to_string(),
+                metal: Metal::Copper
+            }
+        )
     }
+
+    #[test]
+    fn test_calc_voltage_drop() {
+        assert_eq!(voltage_drop_ac(155, 208, 160), 4.042116145290523)
+    }
+
+    #[test]
+    fn test_voltage_drop_dc() {}
 
     #[test]
     fn test_calc_resistance_required() {
@@ -161,8 +189,8 @@ mod tests {
     }
 
     #[test]
-    fn test_calc_change_in_resistance() {
-        assert_eq!(calc_change_in_resistance(20, 1.2), 0.98682)
+    fn test_modify_resistance_temperature() {
+        assert_eq!(modify_resistance_temperature(1.2, 20), 0.98682)
     }
     #[test]
     fn test_min_conductor_size() {
