@@ -39,17 +39,36 @@ pub enum Metal {
     Aluminum,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum ConduitType {
-    Steel,
-    PVC,
-    Aluminum,
+impl TryFrom<String> for Metal {
+    type Error = &'static str;
+
+    fn try_from(item: String) -> Result<Self, Self::Error> {
+        match item.as_str() {
+            "cu" => Ok(Self::Copper),
+            "al" => Ok(Self::Aluminum),
+            _ => Err("Metal must be either cu and al"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Unit {
-    Imperial,
-    Metric,
+pub enum ConduitType {
+    PVC,
+    Aluminum,
+    Steel,
+}
+
+impl TryFrom<String> for ConduitType {
+    type Error = &'static str;
+
+    fn try_from(item: String) -> Result<Self, Self::Error> {
+        match item.as_str() {
+            "pvc" => Ok(Self::PVC),
+            "al" => Ok(Self::Aluminum),
+            "steel" => Ok(Self::Steel),
+            _ => Err("Conduit type must be either pvc, al, or steel"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -70,33 +89,49 @@ impl TryFrom<i8> for Phase {
     }
 }
 
+// #[derive(Debug, PartialEq)]
+// pub enum Unit {
+//     Imperial,
+//     Metric,
+// }
+
 #[derive(Debug, PartialEq)]
 pub struct MinConductorSizeAC {
+    pub phase: Phase,
+    pub metal: Metal,
+    pub conduit_type: ConduitType,
     pub voltage: i32,
     pub current: i32,
-    pub length: i32,
     pub max_vd_percentage: f64,
-    pub temperature: i32,
+    pub parallel_sets: i32,
+    pub length: i32,
+    pub termination_temperature: i32,
     pub power_factor: f64,
-    pub phase: Phase,
-    pub conduit_type: ConduitType,
-    pub metal: Metal,
-    pub unit: Unit,
+}
+
+pub struct InputArgsAC {
+    pub phase: i8,
+    pub metal: String,
+    pub conduit_type: String,
+    pub voltage: i32,
+    pub current: i32,
+    pub max_vd_percentage: f64,
+    pub parallel_sets: i32,
 }
 
 impl MinConductorSizeAC {
-    pub fn new() -> Self {
+    pub fn new(args: InputArgsAC, length: i32) -> Self {
         MinConductorSizeAC {
-            voltage: 0,
-            current: 0,
-            length: 0,
-            phase: Phase::try_from(1).unwrap(),
-            max_vd_percentage: 0.0,
-            conduit_type: ConduitType::Steel,
-            metal: Metal::Copper,
-            unit: Unit::Imperial,
-            power_factor: 85.0,
-            temperature: 75,
+            phase: Phase::try_from(args.phase).unwrap(),
+            metal: Metal::try_from(args.metal).unwrap(),
+            conduit_type: ConduitType::try_from(args.conduit_type).unwrap(),
+            voltage: args.voltage,
+            current: args.current,
+            max_vd_percentage: args.max_vd_percentage,
+            parallel_sets: args.parallel_sets,
+            length,
+            power_factor: 0.9,
+            termination_temperature: 75,
         }
     }
 
@@ -129,18 +164,18 @@ pub fn min_conductor_size(length_ft: i32, voltage: i32, current: i32) -> Conduct
 
 // Estimated, does not account for error
 // https://pdhonline.com/courses/e426/e426content.pdf see page 36/57
-pub fn voltage_drop_ac(length_ft: i32, voltage: i32, current: i32) -> f64 {
+pub fn volts_dropped_ac(length_ft: i32, voltage: i32, current: i32) -> f64 {
     let power_factor: f64 = 0.9; // PF of 0.85 most common
     let theta = f64::acos(power_factor); // Power factor angle
     let multiplier = f64::sqrt(3.0); // (3.0_f64).sqrt() for line-to-line voltage drop, Multiply for 2 instead for line-to-neutral
-    let resistance = 0.0847; // R
-    let reactance = 0.041; // X
+    let resistance = 0.054; // R
+    let reactance = 0.052; // X
     let impedance = resistance * power_factor + reactance * theta.sin(); // Effective Z, Addition based on assumed lagging PF
 
     multiplier * current as f64 * impedance * length_ft as f64 / 1000.0
 }
 
-pub fn voltage_drop_dc(length_ft: i32, voltage: i32, current: i32) -> f64 {
+pub fn volts_dropped_dc(length_ft: i32, voltage: i32, current: i32) -> f64 {
     let resistance = 0.0847; // R
     let impedance = resistance;
 
@@ -169,7 +204,17 @@ mod tests {
 
     #[test]
     fn test_min_conductor_size_calculate() {
-        let min_conductor_size = MinConductorSizeAC::new();
+        let calc_args = InputArgsAC {
+            phase: 3,
+            metal: String::from("cu"),
+            conduit_type: String::from("pvc"),
+            voltage: 208,
+            current: 160,
+            max_vd_percentage: 0.03,
+            parallel_sets: 1,
+        };
+        let min_conductor_size = MinConductorSizeAC::new(calc_args, 400);
+
         assert_eq!(
             min_conductor_size.calculate(),
             Conductor {
@@ -180,12 +225,13 @@ mod tests {
     }
 
     #[test]
-    fn test_calc_voltage_drop() {
-        assert_eq!(voltage_drop_ac(155, 208, 160), 4.042116145290523)
+    fn test_calc_volts_dropped_ac() {
+        // For 250mcm Copper/Steel
+        assert_eq!(volts_dropped_ac(400, 208, 160), 7.899955731920339)
     }
 
     #[test]
-    fn test_voltage_drop_dc() {}
+    fn test_volts_dropped_dc() {}
 
     #[test]
     fn test_calc_resistance_required() {
