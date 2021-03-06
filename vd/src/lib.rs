@@ -39,11 +39,11 @@ pub enum Metal {
     Aluminum,
 }
 
-impl TryFrom<String> for Metal {
+impl TryFrom<&str> for Metal {
     type Error = &'static str;
 
-    fn try_from(item: String) -> Result<Self, Self::Error> {
-        match item.as_str() {
+    fn try_from(item: &str) -> Result<Self, Self::Error> {
+        match item {
             "cu" => Ok(Self::Copper),
             "al" => Ok(Self::Aluminum),
             _ => Err("Metal must be either cu and al"),
@@ -58,11 +58,11 @@ pub enum ConduitType {
     Steel,
 }
 
-impl TryFrom<String> for ConduitType {
+impl TryFrom<&str> for ConduitType {
     type Error = &'static str;
 
-    fn try_from(item: String) -> Result<Self, Self::Error> {
-        match item.as_str() {
+    fn try_from(item: &str) -> Result<Self, Self::Error> {
+        match item {
             "pvc" => Ok(Self::PVC),
             "al" => Ok(Self::Aluminum),
             "steel" => Ok(Self::Steel),
@@ -109,18 +109,22 @@ pub struct MinConductorSizeAC {
     pub power_factor: f64,
 }
 
-pub struct InputArgsAC {
+// Delete
+pub struct InputArgsAC<'a> {
+    pub length: i32,
     pub phase: i8,
-    pub metal: String,
-    pub conduit_type: String,
+    pub metal: &'a str,
+    pub conduit_type: &'a str,
     pub voltage: i32,
     pub current: i32,
     pub max_vd_percentage: f64,
     pub parallel_sets: i32,
 }
 
+// Change to input voltage, current, and vd percentage mandatory, use builder for remaining
+// Make generic accept ENUM of AC or DC args, use impl on input args?
 impl MinConductorSizeAC {
-    pub fn new(args: InputArgsAC, length: i32) -> Self {
+    pub fn new(args: InputArgsAC) -> Self {
         MinConductorSizeAC {
             phase: Phase::try_from(args.phase).unwrap(),
             metal: Metal::try_from(args.metal).unwrap(),
@@ -129,7 +133,7 @@ impl MinConductorSizeAC {
             current: args.current,
             max_vd_percentage: args.max_vd_percentage,
             parallel_sets: args.parallel_sets,
-            length,
+            length: args.length,
             power_factor: 0.9,
             termination_temperature: 75,
         }
@@ -173,13 +177,14 @@ pub fn volts_dropped_ac(length_ft: i32, voltage: i32, current: i32) -> f64 {
     let impedance = resistance * power_factor + reactance * theta.sin(); // Effective Z, Addition based on assumed lagging PF
 
     multiplier * current as f64 * impedance * length_ft as f64 / 1000.0
+    // VD % = result / voltage * 100
 }
 
+// Requires use of different table in NEC for resistance values?
 pub fn volts_dropped_dc(length_ft: i32, voltage: i32, current: i32) -> f64 {
     let resistance = 0.0847; // R
-    let impedance = resistance;
 
-    current as f64 * impedance * length_ft as f64 / 1000.0
+    2.0 * current as f64 * resistance * length_ft as f64 / 1000.0
 }
 
 pub fn calc_resistance_required() -> f64 {
@@ -198,22 +203,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn t2_has_data() {
+    fn t9_has_data() {
         assert_eq!(T9.cu_resistance_steel.get("600"), Some(&0.025));
     }
 
     #[test]
     fn test_min_conductor_size_calculate() {
-        let calc_args = InputArgsAC {
+        let min_conductor_size = MinConductorSizeAC::new(InputArgsAC {
+            length: 200,
             phase: 3,
-            metal: String::from("cu"),
-            conduit_type: String::from("pvc"),
+            metal: "cu",
+            conduit_type: "pvc",
             voltage: 208,
             current: 160,
             max_vd_percentage: 0.03,
             parallel_sets: 1,
-        };
-        let min_conductor_size = MinConductorSizeAC::new(calc_args, 400);
+        });
 
         assert_eq!(
             min_conductor_size.calculate(),
