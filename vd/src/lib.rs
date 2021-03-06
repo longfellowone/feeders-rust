@@ -1,8 +1,9 @@
 #![allow(dead_code, unused_variables)]
-use lazy_static::lazy_static;
+#![feature(once_cell)]
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
+use std::lazy::SyncLazy;
 
 // Use match on metal/phase/conduit/unit
 
@@ -15,16 +16,20 @@ use std::convert::TryFrom;
 // https://github.com/MasonMcGarrity/Voltage_Drop_Calculator/blob/master/main.py#L282
 // https://github.com/Zclarkwilliams/Voltage-Drop-Excel-Calculator/blob/master/Code/Main_Rev2.vba
 
+pub static T9: SyncLazy<Table9> = SyncLazy::new(|| {
+    serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\t9.cbor"))).unwrap()
+});
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Table9 {
-    reactance_pvc_al: BTreeMap<String, f64>,
-    reactance_steel: BTreeMap<String, f64>,
-    cu_resistance_pvc: BTreeMap<String, f64>,
-    cu_resistance_al: BTreeMap<String, f64>,
-    cu_resistance_steel: BTreeMap<String, f64>,
-    al_resistance_pvc: BTreeMap<String, f64>,
-    al_resistance_al: BTreeMap<String, f64>,
-    al_resistance_steel: BTreeMap<String, f64>,
+    pub reactance_pvc_al: BTreeMap<String, f64>,
+    pub reactance_steel: BTreeMap<String, f64>,
+    pub cu_resistance_pvc: BTreeMap<String, f64>,
+    pub cu_resistance_al: BTreeMap<String, f64>,
+    pub cu_resistance_steel: BTreeMap<String, f64>,
+    pub al_resistance_pvc: BTreeMap<String, f64>,
+    pub al_resistance_al: BTreeMap<String, f64>,
+    pub al_resistance_steel: BTreeMap<String, f64>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -148,11 +153,6 @@ impl MinConductorSizeAC {
 }
 
 pub struct MaxDistance {}
-
-lazy_static! {
-    pub static ref T9: Table9 =
-        serde_cbor::from_slice(include_bytes!(concat!(env!("OUT_DIR"), "\\t9.cbor"))).unwrap();
-}
 
 // Maybe use approximate than double check?
 // https://pdhonline.com/courses/e426/e426content.pdf see page49/57

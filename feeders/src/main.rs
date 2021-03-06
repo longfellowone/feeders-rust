@@ -46,7 +46,7 @@ impl QueryRoot {
     async fn todos(&self, ctx: &Context<'_>) -> FieldResult<Vec<Todo>> {
         let db_pool = ctx.data::<PgPool>()?;
 
-        let conductor = vd::T2.get("600mcm").unwrap();
+        let conductor = vd::T9.cu_resistance_steel.get("600").unwrap();
         println!("{:#?}", conductor);
 
         let todos = sqlx::query_as::<_, Todo>(
