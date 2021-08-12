@@ -114,7 +114,8 @@ pub struct MinConductorSizeAC {
     pub power_factor: f64,
 }
 
-// Delete
+// Delete?
+// Remove args that have no defaults (phase, conduit, metal,sets)
 pub struct InputArgsAC<'a> {
     pub length: i32,
     pub phase: i8,
@@ -152,6 +153,8 @@ impl MinConductorSizeAC {
     }
 }
 
+// Single phase max distance
+// V*(VDP/100)/(2*((I*(Re/1000)*PF)+(I*(X/1000)*SIN(ACOS(PF)))))
 pub struct MaxDistance {}
 
 // Maybe use approximate than double check?
@@ -174,7 +177,7 @@ pub fn volts_dropped_ac(length_ft: i32, voltage: i32, current: i32) -> f64 {
     let multiplier = f64::sqrt(3.0); // (3.0_f64).sqrt() for line-to-line voltage drop, Multiply for 2 instead for line-to-neutral
     let resistance = 0.054; // R
     let reactance = 0.052; // X
-    let impedance = resistance * power_factor + reactance * theta.sin(); // Effective Z, Addition based on assumed lagging PF
+    let impedance = (resistance * power_factor) + (reactance * theta.sin()); // Effective Z, Addition based on assumed lagging PF
 
     multiplier * current as f64 * impedance * length_ft as f64 / 1000.0
     // VD % = result / voltage * 100
